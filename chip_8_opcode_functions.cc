@@ -321,12 +321,14 @@ void opcode_F_fn_sets(Chip_8 & chip8){
         // Set delay timer = Vx
         case 0x15:
             chip8.DT = chip8.V[x];
+            chip8.StartDelayTimer();
             chip8.PC_increment();
         break;
         
         // Set sound timer = Vx.
         case 0x18:
             chip8.ST = chip8.V[x];
+            chip8.StartSoundTimer();
             chip8.PC_increment();            
         break;
         

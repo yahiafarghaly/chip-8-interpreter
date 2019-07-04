@@ -2,6 +2,7 @@
 #define _CHIP_8_H__
 
 #include <iostream>
+#include <thread>
 #include "chip_8_opcode_functions.hpp"
 
 #define CHIP_8_DISPLAY_WIDTH    64
@@ -51,6 +52,9 @@ private:
     unsigned char   DT;                  // Delay Timer register.
     unsigned char   ST;                  // Sound Timer register.
     unsigned short  opcode;              // Current fetched opcode.
+
+    std::thread Thread_DelayTimer;
+    std::thread Thread_SoundTimer;
  
 
     void PC_increment(size_t count = 2){
@@ -77,6 +81,10 @@ private:
     friend void opcode_E_fn_sets(Chip_8 &);
     friend void opcode_F_fn_sets(Chip_8 &);
 
+    void DelayTimer();
+    void SoundTimer();
+    void StartDelayTimer();
+    void StartSoundTimer();
 public:
     Chip_8();
     ~Chip_8();
