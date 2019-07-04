@@ -4,6 +4,9 @@
 #include <iostream>
 #include "chip_8_opcode_functions.hpp"
 
+#define CHIP_8_DISPLAY_WIDTH    64
+#define CHIP_8_DISPLAY_HEIGHT   32
+
 class Chip_8
 {
 
@@ -77,8 +80,12 @@ public:
     bool load_application(const char* file_full_path);
     void reset();
     void emulateCycle();
+    // Disply functions
     void updateDisplay();
     void clearDisplay();
+    void drawPixel( const unsigned char& x,
+                    const unsigned char& y,
+                    const unsigned char& pixelValue);
 };
 
 

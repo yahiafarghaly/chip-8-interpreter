@@ -1,8 +1,13 @@
 
 #include <iostream>
-#include <exception>
 #include "chip_8_opcode_functions.hpp"
+#include <stdlib.h>     /* srand, rand */
+#include <time.h>       /* time *
 
+/* All The opcodes execution is performed according
+ * to the chip-8 standarizaton mentioned here in this link
+ * http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#3.0
+ */
 
 const opcode_function_executer opcode_table [] = 
 {
@@ -113,17 +118,147 @@ void opcode_7_fn_sets(Chip_8 & chip8){
     chip8.PC_increment();
 }
 
-void opcode_8_fn_sets(Chip_8 & chip8){}
+// 8xy0 - 8xy1 - 8xy2 - 8xy3 - 8xy4 - 8xy5 - 8xy6 - 8xy7 - 8xyE
+void opcode_8_fn_sets(Chip_8 & chip8){
+    auto code_select = chip8.opcode & 0x000f;
+    auto x = (chip8.opcode & 0x0f00) >> 8;
+    auto y = (chip8.opcode & 0x00f0) >> 4;
 
-void opcode_9_fn_sets(Chip_8 & chip8){}
+    switch(code_select)
+    {
+        // Set Vx = Vy
+        case 0x00:
+            chip8.V[x] = chip8.V[y];
+            chip8.PC_increment();
+        break;
+        
+        // Set Vx = Vx | Vy
+        case 0x01:
+            chip8.V[x] |= chip8.V[y];
+            chip8.PC_increment();  
+        break;
+        
+        // Set Vx = Vx & Vy
+        case 0x02:
+            chip8.V[x] &= chip8.V[y];
+            chip8.PC_increment();
+        break;
+        
+        // Set Vx = Vx xor Vy
+        case 0x03:
+            chip8.V[x] ^= chip8.V[y];
+            chip8.PC_increment();        
+        break;
 
-void opcode_A_fn_sets(Chip_8 & chip8){}
+        // Set Vx = Vx + Vy , VF = carry
+        case 0x04:
+        {   // Create an enclosing scope so not violating the switch case rule
+            // while creating variables.
+            unsigned short result = (unsigned short)chip8.V[x] + (unsigned short)chip8.V[y];
+            chip8.V[0xF] = (result > 0xFF) ? 0x01 : 0x00;
+            chip8.V[x] = result & 0x000F;
+            chip8.PC_increment();            
+        }
+        break;
 
-void opcode_B_fn_sets(Chip_8 & chip8){}
+        // Set Vx = Vx - Vy, set VF = NOT borrow.
+        case 0x05:
+            chip8.V[0xF] = (chip8.V[x] > chip8.V[y]) ? 0x01 : 0x00;
+            chip8.V[x] = chip8.V[x] - chip8.V[y];
+            chip8.PC_increment();
+        break;
 
-void opcode_C_fn_sets(Chip_8 & chip8){}
+        // Set Vx = Vx SHR(Shift Right by one bit) 1
+        case 0x06:
+            chip8.V[0xF] = (chip8.V[x] & 0x01);
+            chip8.V[x] >>= 0x01;
+            chip8.PC_increment();
+        break;
 
-void opcode_D_fn_sets(Chip_8 & chip8){}
+        // Set Vx = Vy - Vx, set VF = NOT borrow
+        case 0x07:
+            chip8.V[0xF] = (chip8.V[y] > chip8.V[x]) ? 0x01 : 0x00;
+            chip8.V[x] = chip8.V[y] - chip8.V[x];
+            chip8.PC_increment();        
+        break;
+
+        // Set Vx = Vx SHL(Shift Left) 1.
+        case 0x0E:
+            chip8.V[0xF] = chip8.V[x] >> 0x07;
+            chip8.V[x] <<= 0x01;
+            chip8.PC_increment();        
+        break;
+
+        default:
+            printf("Unknown opcode [0x8000]: 0x%X\n", chip8.opcode);
+            exit(-1);
+        break;
+    }
+}
+
+// 9xy0 - SNE Vx, Vy
+// Skip next instruction if Vx != Vy.
+void opcode_9_fn_sets(Chip_8 & chip8){
+    auto code_select = chip8.opcode & 0x000f;
+    auto x = (chip8.opcode & 0x0f00) >> 8;
+    auto y = (chip8.opcode & 0x00f0) >> 4;
+    switch(code_select)
+    {
+        case 0x0000:
+            if(chip8.V[x] != chip8.V[y])
+                chip8.PC_increment(4);
+            else
+                chip8.PC_increment(2);
+        break;
+        default:
+            printf("Unknown opcode [0x9000]: 0x%X\n", chip8.opcode);
+            exit(-1);
+        break;
+    }
+}
+
+// Annn, Set I = nnn.
+void opcode_A_fn_sets(Chip_8 & chip8){
+    chip8.I = chip8.opcode & 0x0FFF;
+    chip8.PC_increment();
+}
+
+// Bnnn, Jump to location nnn + V0.
+void opcode_B_fn_sets(Chip_8 & chip8){
+    chip8.PC = (chip8.opcode & 0x0FFF) + chip8.V[0];
+}
+
+// Cxkk - RND Vx, byte
+// Set Vx = random byte AND kk.
+void opcode_C_fn_sets(Chip_8 & chip8){
+    auto x = (chip8.opcode & 0x0F00) >> 8;
+    auto max_byte = (chip8.opcode) & 0x00FF;
+    chip8.V[x] = (rand() % 0xFF) & max_byte;
+    chip8.PC_increment();
+}
+
+// Dxyn - DRW Vx, Vy, nibble
+// Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+void opcode_D_fn_sets(Chip_8 & chip8){
+    auto n = chip8.opcode & 0x000F;
+    auto x = (chip8.opcode & 0x0f00) >> 8;
+    auto y = (chip8.opcode & 0x00f0) >> 4;
+    unsigned char row_sprite = 0;
+    chip8.V[0xF] = 0;
+    
+    for(size_t y_offest = 0; y_offest < n; y_offest++)
+    {
+        row_sprite = chip8.Memory[chip8.I + y_offest];
+        for(size_t x_offest = 0; x_offest < 8; x_offest++)
+        {
+            chip8.drawPixel(x + x_offest,
+                            y + y_offest,
+                            row_sprite & (0x80 >> x_offest) );
+        }
+    }
+    chip8.updateDisplay();
+    chip8.PC_increment();
+}
 
 void opcode_E_fn_sets(Chip_8 & chip8){}
 

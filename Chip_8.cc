@@ -1,4 +1,6 @@
 
+#include <stdlib.h>     /* srand, rand */
+#include <time.h>       /* time */
 #include "Chip_8.hpp"
 #include "chip8_sprites.hpp"
 
@@ -33,6 +35,9 @@ void Chip_8::reset()
     // Clear & update Display.
     clearDisplay();
     updateDisplay();
+
+    // Seed thr random generator with time.
+    srand(time(NULL));
 }
 
 Chip_8::Chip_8()
@@ -60,10 +65,13 @@ void Chip_8::decode_and_execute_opcode(const unsigned short& opcode)
 
 void Chip_8::updateDisplay()
 {
-    for(size_t r = 0; r < 32; r++)
+    for(size_t r = 0; r < CHIP_8_DISPLAY_HEIGHT; r++)
     {    
-        for(size_t c = 0; c < 64; c++)
-            std::cout << GFX[r][c];
+        for(size_t c = 0; c < CHIP_8_DISPLAY_WIDTH; c++)
+            if(GFX[r][c] == 0x01)
+                std::cout << '*';
+            else
+                std::cout << ' ';
         std::cout << "\n";
     }
     std::cout << "\n";
@@ -71,7 +79,23 @@ void Chip_8::updateDisplay()
 
 void Chip_8::clearDisplay()
 {
-    for(size_t r = 0; r < 32; r++)
-        for(size_t c = 0; c < 64; c++)
+    for(size_t r = 0; r < CHIP_8_DISPLAY_HEIGHT; r++)
+        for(size_t c = 0; c < CHIP_8_DISPLAY_WIDTH; c++)
             GFX[r][c] = 0;
+}
+
+/*!
+ * According to the opcode `Dxyn` , The function does these jobs.
+ * The pixel value is XORed onto the existing screen.
+ * Handles the pixel wrapping around the display.
+ * Set V[F] = 1 if collision is detected (A pixel is erased).
+ * */
+void Chip_8::drawPixel( const unsigned char& x,
+                        const unsigned char& y,
+                        const unsigned char& pixelValue)
+{
+        if(GFX[x % CHIP_8_DISPLAY_HEIGHT][y % CHIP_8_DISPLAY_WIDTH] == 0x01
+        && pixelValue == 0x01)
+            this->V[0xF] = 0x01;
+        GFX[x % CHIP_8_DISPLAY_HEIGHT][y % CHIP_8_DISPLAY_WIDTH] ^= (pixelValue > 0 ? 0x01 : 0x00);
 }
