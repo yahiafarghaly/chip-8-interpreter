@@ -6,6 +6,10 @@
 
 #define CHIP_8_DISPLAY_WIDTH    64
 #define CHIP_8_DISPLAY_HEIGHT   32
+#define CHIP_8_PIXEL_ON         0x01
+#define CHIP_8_PIXEL_OFF        0x00
+#define CHIP_8_KEY_PRESSED      0x01
+#define CHIP_8_KEY_NOT_PRESSED  0x00
 
 class Chip_8
 {
@@ -44,10 +48,10 @@ private:
     unsigned short  I;                   // I Register.
     unsigned short  SP;                  // Stack Pointer (Can be 8 bit width).
     unsigned short  PC;                  // Program Counter.
-
+    unsigned char   DT;                  // Delay Timer register.
+    unsigned char   ST;                  // Sound Timer register.
     unsigned short  opcode;              // Current fetched opcode.
-    unsigned char   delay_timer;
-    unsigned char   sound_timer; 
+ 
 
     void PC_increment(size_t count = 2){
         this->PC += count;

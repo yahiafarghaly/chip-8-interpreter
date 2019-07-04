@@ -260,6 +260,116 @@ void opcode_D_fn_sets(Chip_8 & chip8){
     chip8.PC_increment();
 }
 
-void opcode_E_fn_sets(Chip_8 & chip8){}
+// Ex9E - ExA1
+void opcode_E_fn_sets(Chip_8 & chip8){
+    auto x = (chip8.opcode & 0x0f00) >> 8;
+    auto code_select = chip8.opcode & 0x00ff;
+    switch(code_select)
+    {
+        // Skip next instruction if key with the value of Vx is pressed.
+        case 0x009E:
+            if(chip8.key_status[chip8.V[x]] == CHIP_8_KEY_PRESSED)
+                chip8.PC_increment(4);
+            else
+                chip8.PC_increment();
+        break;
 
-void opcode_F_fn_sets(Chip_8 & chip8){}
+        // Skip next instruction if key with the value of Vx is not press
+        case 0x00A1:
+            if(chip8.key_status[chip8.V[x]] == CHIP_8_KEY_NOT_PRESSED)
+                chip8.PC_increment(4);
+            else
+                chip8.PC_increment();
+        break;
+
+        default:
+            printf("Unknown opcode [0xE000]: 0x%X\n", chip8.opcode);
+            exit(-1);
+        break;
+    }
+}
+
+// Fx07 - Fx0A - Fx15 - Fx18 - Fx1E - Fx29 - Fx23 - Fx55 - Fx65
+void opcode_F_fn_sets(Chip_8 & chip8){
+    auto x = (chip8.opcode & 0x0f00) >> 8;
+    auto code_select = chip8.opcode & 0x00FF;
+    switch(code_select)
+    {
+        // Set Vx = delay timer value.
+        case 0x07:
+            chip8.V[x] = chip8.DT;
+            chip8.PC_increment();
+        break;
+
+        // Wait for a key press, store the value of the key in Vx.
+        case 0x0A:
+            {
+                while(true)
+                {
+                    for(size_t i = 0; i < 16; i++)
+                        if(chip8.key_status[i] == CHIP_8_KEY_PRESSED)
+                            {
+                                chip8.V[x] = i;
+                                break;
+                            }
+                            
+                }
+                chip8.PC_increment();
+            }
+        break;
+        
+        // Set delay timer = Vx
+        case 0x15:
+            chip8.DT = chip8.V[x];
+            chip8.PC_increment();
+        break;
+        
+        // Set sound timer = Vx.
+        case 0x18:
+            chip8.ST = chip8.V[x];
+            chip8.PC_increment();            
+        break;
+        
+        // Set I = I + Vx.
+        case 0x1E:
+        // Should I care about V[0xF] ? (Not mentioned in the specifications).
+            chip8.I += chip8.V[x];
+            chip8.PC_increment();
+        break;
+        
+        // Set I = location of sprite for digit Vx.
+        case 0x29:
+            // The start of each hex-digit is 5 bytes along.
+            chip8.I = chip8.Memory[chip8.V[x]]*0x05;
+            chip8.PC_increment();
+        break;
+
+        // Store BCD representation of Vx in memory locations I, I+1, and I+2
+        case 0x33:
+            chip8.Memory[chip8.I]       =  chip8.V[x] / 100;        // The hundard digit .
+            chip8.Memory[chip8.I + 1]   = (chip8.V[x] / 10) % 10;   // The ten digit .
+            chip8.Memory[chip8.I + 2]   = (chip8.V[x] % 100) % 10;  // The one digit .
+            chip8.PC_increment();
+        break;
+
+        // Store registers V0 through Vx in memory starting at location I
+        case 0x55:
+            for(size_t i = 0; i <= x; i++)
+                chip8.Memory[chip8.I + i] = chip8.V[i];
+            chip8.PC_increment();
+        break;
+
+        // Read registers V0 through Vx from memory starting at location I.
+        case 0x65:
+            for(size_t i = 0; i <= x; i++)
+                chip8.V[i] = chip8.Memory[chip8.I + i];
+            chip8.PC_increment();
+        break;
+
+        default:
+            printf("Unknown opcode [0xF000]: 0x%X\n", chip8.opcode);
+            exit(-1);
+        break;
+
+    }
+}
