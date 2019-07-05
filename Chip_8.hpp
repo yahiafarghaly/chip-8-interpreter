@@ -43,7 +43,7 @@ private:
 
     unsigned char   Memory[4*1024];      // 4 Kbytes of memory size.
     unsigned short  Stack[16];           // Stack of 16 nested levels.
-    unsigned char   GFX[32][64];          // a 64x32-pixel monochrome display used by Chip 8
+    unsigned char   GFX[32][64];         // a 64x32-pixel monochrome display used by Chip 8
     unsigned char   key_status[16];      // The computers which originally used the Chip-8 Language had a 16-key hexadecimal keypad.
     unsigned char   V[16];               // V general purpose registers.(V0 --> VF,VF is used as a flag for some Instructions).
     unsigned short  I;                   // I Register.
@@ -92,12 +92,16 @@ public:
     bool load_application(const char* file_full_path);
     void reset();
     void emulateCycle();
-    // Disply functions
+    // Display functions
     void updateDisplay();
     void clearDisplay();
     void drawPixel( const unsigned char& x,
                     const unsigned char& y,
                     const unsigned char& pixelValue);
+    // Keyboard Functions
+    void pressKey(const unsigned char& keyIdx);
+    void releaseKey(const unsigned char& keyIdx);
+    void printKeypadStatus();
 };
 
 

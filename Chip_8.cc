@@ -16,17 +16,17 @@ void Chip_8::reset()
     this->SP = 0;
 
     // Clear Memory.
-    for(auto byte : Memory)
-        byte = 0;
+    for(size_t i = 0; i < 4*1024; i++)
+        Memory[i] = 0;
     // Clear Stack.
-    for(auto i : Stack)
-        i = 0;
+    for(size_t i = 0; i < 16; i++)
+        Stack[i] = 0;
     // Clear Keys Status.
-    for(auto k : key_status)
-        k = CHIP_8_KEY_NOT_PRESSED;
+    for(size_t i = 0; i < 16; i++)
+        key_status[i] = CHIP_8_KEY_NOT_PRESSED;
     // Clear V Registers. 
-    for(auto reg : V)
-        reg = 0;
+    for(size_t i = 0; i < 16; i++)
+        V[i] = 0;
     // Load hex font sprites in the reserved memory area of Interpreter.
     for(size_t i = 0; i < 5*16; i++)
         Memory[i] = chip8_hex_sprites[i];
@@ -178,4 +178,38 @@ bool Chip_8::load_application(const char* file_full_path)
     
     c8_app.close();
 	return true;
+}
+
+
+
+void Chip_8::pressKey(const unsigned char& keyIdx)
+{
+    this->key_status[keyIdx] = CHIP_8_KEY_PRESSED;
+}
+void Chip_8::releaseKey(const unsigned char& keyIdx)
+{
+    this->key_status[keyIdx] = CHIP_8_KEY_NOT_PRESSED;
+}
+
+void Chip_8::printKeypadStatus()
+{
+    printf("Keypad Status: \n");
+    printf("-- -- -- --\n");
+    printf("%d %d %d %d\n",
+        key_status[1],key_status[2],key_status[3],key_status[0x0C]);
+    printf("-- -- -- --\n");
+    
+    printf("%d %d %d %d\n",
+    key_status[4],key_status[5],key_status[6],key_status[0x0D]);
+    printf("-- -- -- --\n");
+
+        printf("%d %d %d %d\n",
+    key_status[7],key_status[8],key_status[9],key_status[0x0E]);
+    printf("-- -- -- --\n");
+    
+        printf("%d %d %d %d\n",
+    key_status[0x0A],key_status[0],key_status[0x0B],key_status[0x0F]);
+
+    printf("-- -- -- --\n");
+    printf("\n");
 }
