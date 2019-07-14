@@ -42,8 +42,7 @@ private:
 // +---------------+= 0x000 (0) Start of Chip-8 RAM
 
     unsigned char   Memory[4*1024];      // 4 Kbytes of memory size.
-    unsigned short  Stack[16];           // Stack of 16 nested levels.
-    unsigned char   GFX[32][64];         // a 64x32-pixel monochrome display used by Chip 8
+    unsigned short  Stack[16];           // Stack of 16 nested levels.8
     unsigned char   key_status[16];      // The computers which originally used the Chip-8 Language had a 16-key hexadecimal keypad.
     unsigned char   V[16];               // V general purpose registers.(V0 --> VF,VF is used as a flag for some Instructions).
     unsigned short  I;                   // I Register.
@@ -90,9 +89,16 @@ public:
     ~Chip_8();
 
     bool load_application(const char* file_full_path);
+    void viewMemory();
     void reset();
     void emulateCycle();
     // Display functions
+    bool drawFlag;
+/*  GFX:
+        (0,0)	(63,0)
+        (0,31)	(63,31)
+*/
+    unsigned char   GFX[CHIP_8_DISPLAY_HEIGHT][CHIP_8_DISPLAY_WIDTH];         // a 64x32-pixel monochrome display used by Chip 
     void updateDisplay();
     void clearDisplay();
     void drawPixel( const unsigned char& x,

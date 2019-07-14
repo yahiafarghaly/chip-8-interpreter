@@ -32,8 +32,9 @@ void Chip_8::reset()
         Memory[i] = chip8_hex_sprites[i];
 
     // Clear & update Display.
+    drawFlag = true;
     clearDisplay();
-    updateDisplay();
+    //updateDisplay();
 
     // Seed thr random generator with time.
     srand(time(NULL));
@@ -78,7 +79,7 @@ void Chip_8::DelayTimer()
     while(this->DT > 0)
     {
         this->DT -= 1;
-        printf("Timer Value %d\n",this->DT);
+        //printf("Timer Value %d\n",this->DT);
         std::this_thread::sleep_for(std::chrono::milliseconds(17));     
     }
 }
@@ -94,11 +95,25 @@ void Chip_8::SoundTimer()
     }
 }
 
+void Chip_8::viewMemory()
+{
+    for(int i = 0; i < 4*1024; i+=2)
+	{
+		printf("[%i] => 0x%x\n",i,Memory[i] << 8 |Memory[i + 1]);
+	}
+}
 void Chip_8::emulateCycle()
 {
     // Fetch opcode.
     this->opcode = Memory[PC] << 8 | Memory[PC + 1]; // opcode is 2 bytes on chip 8.
     decode_and_execute_opcode(opcode);
+    if(this->DT > 0)
+        this->DT -= 1;
+    if(this->ST > 0)
+    {
+        this->ST -= 1;
+        printf("BEEP !");
+    }
 }
 
 
@@ -112,8 +127,8 @@ void Chip_8::updateDisplay()
     for(size_t r = 0; r < CHIP_8_DISPLAY_HEIGHT; r++)
     {    
         for(size_t c = 0; c < CHIP_8_DISPLAY_WIDTH; c++)
-            if(GFX[r][c] == CHIP_8_PIXEL_ON)
-                std::cout << '*';
+            if(GFX[r][c] == CHIP_8_PIXEL_OFF)
+                std::cout << '0';
             else
                 std::cout << ' ';
         std::cout << "\n";
@@ -138,10 +153,11 @@ void Chip_8::drawPixel( const unsigned char& x,
                         const unsigned char& y,
                         const unsigned char& pixelValue)
 {
-        if(GFX[x % CHIP_8_DISPLAY_HEIGHT][y % CHIP_8_DISPLAY_WIDTH] == CHIP_8_PIXEL_ON
+        if(GFX[y % CHIP_8_DISPLAY_HEIGHT][x % CHIP_8_DISPLAY_WIDTH] == CHIP_8_PIXEL_ON
         && pixelValue > CHIP_8_PIXEL_OFF)
             this->V[0xF] = 0x01;
-        GFX[x % CHIP_8_DISPLAY_HEIGHT][y % CHIP_8_DISPLAY_WIDTH] ^= 
+
+        GFX[y % CHIP_8_DISPLAY_HEIGHT][x % CHIP_8_DISPLAY_WIDTH] ^= 
                                                     (pixelValue > CHIP_8_PIXEL_OFF ? CHIP_8_PIXEL_ON : CHIP_8_PIXEL_OFF);
 }
 
