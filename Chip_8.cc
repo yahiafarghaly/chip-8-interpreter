@@ -32,9 +32,8 @@ void Chip_8::reset()
         Memory[i] = chip8_hex_sprites[i];
 
     // Clear & update Display.
-    drawFlag = true;
+    drawOnDisplay = true;
     clearDisplay();
-    //updateDisplay();
 
     // Seed thr random generator with time.
     srand(time(NULL));
@@ -114,11 +113,6 @@ extern void Disassemble_Chip8_Opcode(unsigned short opcode, int pc);
 
 void Chip_8::emulateCycle()
 {
-    // static int execution_counter = 0;
-	// if(execution_counter > 5000)
-	// 	exit(0);
-	// else
-	// 	++execution_counter;
     // Fetch opcode.
     this->opcode = Memory[PC] << 8 | Memory[PC + 1]; // opcode is 2 bytes on chip 8.
     //Disassemble_Chip8_Opcode(opcode,PC);
@@ -192,11 +186,12 @@ bool Chip_8::load_application(const char* file_full_path)
     if(buffer.size() > 4096-512)
     {
         printf("Application ROM is bigger than chip 8 memory\n");
-        printf("Application ROM: %lu\n",buffer.size());
+        printf("Application ROM: %lu bytes\n",buffer.size());
         return false;
     }
     else
     {
+        printf("Application Size: %lu bytes\n",buffer.size());
         for(int i = 0; i < buffer.size(); i++)
             this->Memory[i+512] = buffer[i];
     }

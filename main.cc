@@ -8,7 +8,7 @@
 #define SCREEN_HEIGHT 32
 
 Chip_8 myChip8;
-int modifier = 10;
+const int modifier = 10;
 
 // Window size
 int display_width = SCREEN_WIDTH * modifier;
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
 	glutInitWindowSize(display_width, display_height);
     glutInitWindowPosition(320, 320);
-	glutCreateWindow("myChip8 by Yahia Farghaly");
+	glutCreateWindow("Chip 8 Interpreter by Yahia Farghaly");
 	
 	glutDisplayFunc(display);
 	glutIdleFunc(display);
@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
-// Old GFX code
+
 void drawPixel(int x, int y)
 {
 	glBegin(GL_QUADS);
@@ -91,7 +91,7 @@ void display()
 {
 	myChip8.emulateCycle();
 		
-	if(myChip8.drawFlag)
+	if(myChip8.drawOnDisplay)
 	{
 		// Clear framebuffer
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -102,7 +102,7 @@ void display()
 		glutSwapBuffers();    
 
 		// Processed frame
-		myChip8.drawFlag = false;
+		myChip8.drawOnDisplay = false;
 	}
 }
 

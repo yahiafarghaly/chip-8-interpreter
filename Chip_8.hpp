@@ -95,7 +95,7 @@ public:
     void reset();
     void emulateCycle();
     // Display functions
-    bool drawFlag;
+    bool drawOnDisplay;
 /*  GFX:
         (0,0)	(63,0)
         (0,31)	(63,31)

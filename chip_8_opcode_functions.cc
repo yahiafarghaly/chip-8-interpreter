@@ -37,8 +37,7 @@ void opcode_0_fn_sets(Chip_8 & chip8){
     {   
         case 0x00E0:    // Clear The display
                 chip8.clearDisplay();
-                //chip8.updateDisplay();
-                chip8.drawFlag = true;
+                chip8.drawOnDisplay = true;
                 chip8.PC_increment(); // By default it's 2 bytes As Chip 8 does.
         break;
 
@@ -259,8 +258,7 @@ void opcode_D_fn_sets(Chip_8 & chip8){
                             row_sprite & (0x80 >> x_offest) );
         }
     }
-    chip8.drawFlag = true;
-    //chip8.updateDisplay();
+    chip8.drawOnDisplay = true;
     chip8.PC_increment();
 }
 
