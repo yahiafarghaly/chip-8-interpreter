@@ -37,7 +37,8 @@ void opcode_0_fn_sets(Chip_8 & chip8){
     {   
         case 0x00E0:    // Clear The display
                 chip8.clearDisplay();
-                chip8.updateDisplay();
+                //chip8.updateDisplay();
+                chip8.drawFlag = true;
                 chip8.PC_increment(); // By default it's 2 bytes As Chip 8 does.
         break;
 
@@ -241,22 +242,25 @@ void opcode_C_fn_sets(Chip_8 & chip8){
 // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
 void opcode_D_fn_sets(Chip_8 & chip8){
     auto n = chip8.opcode & 0x000F;
-    auto x = (chip8.opcode & 0x0f00) >> 8;
-    auto y = (chip8.opcode & 0x00f0) >> 4;
+    auto x = chip8.V[(chip8.opcode & 0x0f00) >> 8];
+    auto y = chip8.V[(chip8.opcode & 0x00f0) >> 4];
     unsigned char row_sprite = 0;
     chip8.V[0xF] = 0;
     
     for(size_t y_offest = 0; y_offest < n; y_offest++)
     {
+        //printf("I = %d\n",chip8.I);
         row_sprite = chip8.Memory[chip8.I + y_offest];
         for(size_t x_offest = 0; x_offest < 8; x_offest++)
         {
+            //printf("D (%d,%d) = %d\n",x + x_offest,(y + y_offest),row_sprite & (0x80 >> x_offest));
             chip8.drawPixel(x + x_offest,
                             y + y_offest,
                             row_sprite & (0x80 >> x_offest) );
         }
     }
-    chip8.updateDisplay();
+    chip8.drawFlag = true;
+    //chip8.updateDisplay();
     chip8.PC_increment();
 }
 
@@ -304,16 +308,17 @@ void opcode_F_fn_sets(Chip_8 & chip8){
         // Wait for a key press, store the value of the key in Vx.
         case 0x0A:
             {
-                while(true)
-                {
-                    for(size_t i = 0; i < 16; i++)
-                        if(chip8.key_status[i] == CHIP_8_KEY_PRESSED)
-                            {
-                                chip8.V[x] = i;
-                                break;
-                            }
-                            
-                }
+                bool keyIsPressed = false;
+
+                for(size_t i = 0; i < 16; i++)
+                    if(chip8.key_status[i] == CHIP_8_KEY_PRESSED)
+                        {
+                            chip8.V[x] = i;
+                            keyIsPressed = true;
+                        }
+                if(!keyIsPressed) 
+                    return; // Return To Skip This Cycle And repeat Fx0A opcode to wait for a key press.
+
                 chip8.PC_increment();
             }
         break;
@@ -342,7 +347,7 @@ void opcode_F_fn_sets(Chip_8 & chip8){
         // Set I = location of sprite for digit Vx.
         case 0x29:
             // The start of each hex-digit is 5 bytes along.
-            chip8.I = chip8.Memory[chip8.V[x]]*0x05;
+            chip8.I = chip8.V[x]*0x05;
             chip8.PC_increment();
         break;
 

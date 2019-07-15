@@ -1,10 +1,27 @@
 #include <iostream>
-#include <SFML/Graphics.hpp>
+#include <GL/glut.h>
 #include "Chip_8.hpp"
 
 
-void KeyPressedToChip8(const sf::Event& keyEvent, Chip_8& mychip8);
-void KeyReleasedToChip8(const sf::Event& keyEvent, Chip_8& mychip8);
+// Display size
+#define SCREEN_WIDTH 64
+#define SCREEN_HEIGHT 32
+
+Chip_8 myChip8;
+int modifier = 10;
+
+// Window size
+int display_width = SCREEN_WIDTH * modifier;
+int display_height = SCREEN_HEIGHT * modifier;
+
+void display();
+void reshape_window(GLsizei w, GLsizei h);
+void keyboardUp(unsigned char key, int x, int y);
+void keyboardDown(unsigned char key, int x, int y);
+
+typedef unsigned char u8;
+u8 screenData[SCREEN_HEIGHT][SCREEN_WIDTH][3]; 
+void setupTexture();
 
 int main(int argc, char **argv)
 {
@@ -14,8 +31,7 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-    Chip_8 mychip8;
-    if(!mychip8.load_application(argv[1]))
+    if(!myChip8.load_application(argv[1]))
     {
         printf("Failed to Load ` %s ` as a chip 8 application\n",argv[1]);
         return -2;
@@ -24,203 +40,128 @@ int main(int argc, char **argv)
     printf("Welcome to Chip 8 Interpreter. \n");
     printf("%s is loaded successfully\n",argv[1]);
 
-    sf::RenderWindow window(sf::VideoMode(320, 320), "Chip 8 Interpreter By Yahia Farghaly");
-    // Prevent repeated recording of a continous key press.
-    window.setKeyRepeatEnabled(false);
+	// Setup OpenGL
+	glutInit(&argc, argv);          
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
 
-    sf::CircleShape shape(100.f);
-    shape.setFillColor(sf::Color::Green);
 
-    while (window.isOpen())
-    {
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            switch(event.type)
-            {
-                case sf::Event::Closed:
-                    window.close();
-                break;
+	glutInitWindowSize(display_width, display_height);
+    glutInitWindowPosition(320, 320);
+	glutCreateWindow("myChip8 by Yahia Farghaly");
+	
+	glutDisplayFunc(display);
+	glutIdleFunc(display);
+    glutReshapeFunc(reshape_window);        
+	glutKeyboardFunc(keyboardDown);
+	glutKeyboardUpFunc(keyboardUp); 
+	
 
-                case sf::Event::KeyPressed:
-                    KeyPressedToChip8(event,mychip8);
-                break;
-
-                case sf::Event::KeyReleased:
-                    KeyReleasedToChip8(event,mychip8);
-                break;
-
-                case sf::Event::Resized:
-                    std::cout << "new width: " << event.size.width << std::endl;
-                    std::cout << "new height: " << event.size.height << std::endl;
-                break;
-
-                default:
-                break;
-            }
-        }
-
-        window.clear();
-        window.draw(shape);
-        window.display();
-    }
-
+	glutMainLoop(); 
 
     return 0;
 }
 
-
-void KeyPressedToChip8(const sf::Event& keyEvent, Chip_8& mychip8)
+// Old GFX code
+void drawPixel(int x, int y)
 {
-
-    /*!   Original Layout   ==>     Todady's Mapped Keyboard Layout
-     *      1	2	3	C   ==>     1   2   3   4
-     *      4	5	6	D   ==>     Q   W   E   R
-     *      7	8	9	E   ==>     A   S   D   F
-     *      A	0	B	F   ==>     Z   X   C   V
-     */
-
-    switch(keyEvent.key.code)
-    {
-        case sf::Keyboard::Num1:
-            mychip8.pressKey(0x01);
-        break;
-
-        case sf::Keyboard::Num2:
-            mychip8.pressKey(0x02);
-        break;
-
-        case sf::Keyboard::Num3:
-            mychip8.pressKey(0x03);
-        break;
-
-        case sf::Keyboard::Num4:
-            mychip8.pressKey(0x0C);
-        break;
-
-        case sf::Keyboard::Q:
-            mychip8.pressKey(0x04);
-        break;
-
-        case sf::Keyboard::W:
-            mychip8.pressKey(0x05);
-        break;
-
-        case sf::Keyboard::E:
-            mychip8.pressKey(0x06);
-        break;
-
-        case sf::Keyboard::R:
-            mychip8.pressKey(0x0D);
-        break;
-
-        case sf::Keyboard::A:
-            mychip8.pressKey(0x07);
-        break;
-
-        case sf::Keyboard::S:
-            mychip8.pressKey(0x08);
-        break;
-
-        case sf::Keyboard::D:
-            mychip8.pressKey(0x09);
-        break;
-
-        case sf::Keyboard::F:
-            mychip8.pressKey(0x0E);
-        break;
-
-        case sf::Keyboard::Z:
-            mychip8.pressKey(0x0A);
-        break;
-
-        case sf::Keyboard::X:
-            mychip8.pressKey(0x00);
-        break;
-
-        case sf::Keyboard::C:
-            mychip8.pressKey(0x0B);
-        break;
-
-        case sf::Keyboard::V:
-            mychip8.pressKey(0x0F);
-        break;
-
-        default:
-        break;
-    }
+	glBegin(GL_QUADS);
+		glVertex3f((x * modifier) + 0.0f,     (y * modifier) + 0.0f,	 0.0f);
+		glVertex3f((x * modifier) + 0.0f,     (y * modifier) + modifier, 0.0f);
+		glVertex3f((x * modifier) + modifier, (y * modifier) + modifier, 0.0f);
+		glVertex3f((x * modifier) + modifier, (y * modifier) + 0.0f,	 0.0f);
+	glEnd();
 }
 
-
-void KeyReleasedToChip8(const sf::Event& keyEvent, Chip_8& mychip8)
+void updateQuads(const Chip_8& c8)
 {
-    switch(keyEvent.key.code)
-    {
-        case sf::Keyboard::Num1:
-            mychip8.releaseKey(0x01);
-        break;
+	// Draw
+	for(int y = 0; y < 32; ++y)		
+		for(int x = 0; x < 64; ++x)
+		{
+			if(c8.GFX[y][x] == 0) 
+				glColor3f(0.0f,0.0f,0.0f);			
+			else 
+				glColor3f(1.0f,1.0f,1.0f);
 
-        case sf::Keyboard::Num2:
-            mychip8.releaseKey(0x02);
-        break;
+			drawPixel(x, y);
+		}
+}
 
-        case sf::Keyboard::Num3:
-            mychip8.releaseKey(0x03);
-        break;
+void display()
+{
+	myChip8.emulateCycle();
+		
+	if(myChip8.drawFlag)
+	{
+		// Clear framebuffer
+		glClear(GL_COLOR_BUFFER_BIT);
 
-        case sf::Keyboard::Num4:
-            mychip8.releaseKey(0x0C);
-        break;
+		updateQuads(myChip8);		
 
-        case sf::Keyboard::Q:
-            mychip8.releaseKey(0x04);
-        break;
+		// Swap buffers!
+		glutSwapBuffers();    
 
-        case sf::Keyboard::W:
-            mychip8.releaseKey(0x05);
-        break;
+		// Processed frame
+		myChip8.drawFlag = false;
+	}
+}
 
-        case sf::Keyboard::E:
-            mychip8.releaseKey(0x06);
-        break;
+void reshape_window(GLsizei w, GLsizei h)
+{
+	glClearColor(0.0f, 0.0f, 0.5f, 0.0f);
+	glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, w, h, 0);        
+    glMatrixMode(GL_MODELVIEW);
+    glViewport(0, 0, w, h);
 
-        case sf::Keyboard::R:
-            mychip8.releaseKey(0x0D);
-        break;
+	// Resize quad
+	display_width = w;
+	display_height = h;
+}
 
-        case sf::Keyboard::A:
-            mychip8.releaseKey(0x07);
-        break;
+void keyboardDown(unsigned char key, int x, int y)
+{
+	if(key == '1')		myChip8.pressKey(0x01);
+	else if(key == '2')	myChip8.pressKey(0x02);
+	else if(key == '3')	myChip8.pressKey(0x03);
+	else if(key == '4')	myChip8.pressKey(0x0C);
 
-        case sf::Keyboard::S:
-            mychip8.releaseKey(0x08);
-        break;
+	else if(key == 'q')	myChip8.pressKey(0x04);
+	else if(key == 'w')	myChip8.pressKey(0x05);
+	else if(key == 'e')	myChip8.pressKey(0x06);
+	else if(key == 'r')	myChip8.pressKey(0x0D);
 
-        case sf::Keyboard::D:
-            mychip8.releaseKey(0x09);
-        break;
+	else if(key == 'a')	myChip8.pressKey(0x07);
+	else if(key == 's')	myChip8.pressKey(0x08);
+	else if(key == 'd')	myChip8.pressKey(0x09);
+	else if(key == 'f')	myChip8.pressKey(0x0E);
 
-        case sf::Keyboard::F:
-            mychip8.releaseKey(0x0E);
-        break;
+	else if(key == 'z')	myChip8.pressKey(0x0A);
+	else if(key == 'x')	myChip8.pressKey(0x00);
+	else if(key == 'c')	myChip8.pressKey(0x0B);
+	else if(key == 'v')	myChip8.pressKey(0x0F);
+}
 
-        case sf::Keyboard::Z:
-            mychip8.releaseKey(0x0A);
-        break;
+void keyboardUp(unsigned char key, int x, int y)
+{
+	if(key == '1')		myChip8.releaseKey(0x01);
+	else if(key == '2')	myChip8.releaseKey(0x02);
+	else if(key == '3')	myChip8.releaseKey(0x03);
+	else if(key == '4')	myChip8.releaseKey(0x0C);
 
-        case sf::Keyboard::X:
-            mychip8.releaseKey(0x00);
-        break;
+	else if(key == 'q')	myChip8.releaseKey(0x04);
+	else if(key == 'w')	myChip8.releaseKey(0x05);
+	else if(key == 'e')	myChip8.releaseKey(0x06);
+	else if(key == 'r')	myChip8.releaseKey(0x0D);
 
-        case sf::Keyboard::C:
-            mychip8.releaseKey(0x0B);
-        break;
+	else if(key == 'a')	myChip8.releaseKey(0x07);
+	else if(key == 's')	myChip8.releaseKey(0x08);
+	else if(key == 'd')	myChip8.releaseKey(0x09);
+	else if(key == 'f')	myChip8.releaseKey(0x0E);
 
-        case sf::Keyboard::V:
-            mychip8.releaseKey(0x0F);
-        break;
-
-        default:
-        break;
-    }
+	else if(key == 'z')	myChip8.releaseKey(0x0A);
+	else if(key == 'x')	myChip8.releaseKey(0x00);
+	else if(key == 'c')	myChip8.releaseKey(0x0B);
+	else if(key == 'v')	myChip8.releaseKey(0x0F);
 }
