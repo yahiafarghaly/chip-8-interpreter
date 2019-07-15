@@ -39,13 +39,9 @@ void Chip_8::reset()
     // Seed thr random generator with time.
     srand(time(NULL));
 
-    // Make sure that these two threads have finished.
-    if(Thread_DelayTimer.joinable())
-        Thread_DelayTimer.join();
-    if(Thread_SoundTimer.joinable())
-        Thread_SoundTimer.join();
-
     // Reset Timers.
+    activeDelayTimer = false;
+    activeSoundTimer = false;
     DT = 0;
     ST = 0;
 }
@@ -57,42 +53,53 @@ Chip_8::Chip_8()
 
 Chip_8::~Chip_8()
 {
-    if(Thread_DelayTimer.joinable())
-        Thread_DelayTimer.join();
-    if(Thread_SoundTimer.joinable())
-        Thread_SoundTimer.join();
 }
 
 void Chip_8::StartDelayTimer()
 {
-    Thread_DelayTimer = std::thread(&Chip_8::DelayTimer,this);
+    if(!activeDelayTimer)
+    {
+        Thread_DelayTimer = std::thread(&Chip_8::DelayTimer,this);
+        Thread_DelayTimer.detach();
+    }
 }
 
 void Chip_8::StartSoundTimer()
 {
-    Thread_SoundTimer = std::thread(&Chip_8::SoundTimer,this);
+    if(!activeSoundTimer)
+    {
+        Thread_SoundTimer = std::thread(&Chip_8::SoundTimer,this);
+        Thread_SoundTimer.detach();
+    }
 }
 
 void Chip_8::DelayTimer()
 {
+    activeDelayTimer = true;
     // Decrease The timer value by 1 at rate 60 Hz (1/60 ~ 17 ms)
     while(this->DT > 0)
     {
         this->DT -= 1;
-        //printf("Timer Value %d\n",this->DT);
         std::this_thread::sleep_for(std::chrono::milliseconds(17));     
     }
+    activeDelayTimer = false;
 }
 
 void Chip_8::SoundTimer()
 {
+    activeSoundTimer = true;
     // Decrease The timer value by 1 at rate 60 Hz (1/60 ~ 17 ms)
     while(this->ST > 0)
     {
         this->ST -= 1;
-        printf("BEEP !");
+        if(this->ST == 1)
+        { 
+            printf("\aBeep!\n");
+            break;
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(17));     
     }
+    activeSoundTimer = false;
 }
 
 void Chip_8::viewMemory()
@@ -102,18 +109,20 @@ void Chip_8::viewMemory()
 		printf("[%i] => 0x%x\n",i,Memory[i] << 8 |Memory[i + 1]);
 	}
 }
+
+extern void Disassemble_Chip8_Opcode(unsigned short opcode, int pc);
+
 void Chip_8::emulateCycle()
 {
+    // static int execution_counter = 0;
+	// if(execution_counter > 5000)
+	// 	exit(0);
+	// else
+	// 	++execution_counter;
     // Fetch opcode.
     this->opcode = Memory[PC] << 8 | Memory[PC + 1]; // opcode is 2 bytes on chip 8.
+    //Disassemble_Chip8_Opcode(opcode,PC);
     decode_and_execute_opcode(opcode);
-    if(this->DT > 0)
-        this->DT -= 1;
-    if(this->ST > 0)
-    {
-        this->ST -= 1;
-        printf("BEEP !");
-    }
 }
 
 

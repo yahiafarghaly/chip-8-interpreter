@@ -80,6 +80,8 @@ private:
     friend void opcode_E_fn_sets(Chip_8 &);
     friend void opcode_F_fn_sets(Chip_8 &);
 
+    bool activeDelayTimer; // To indicate that the timer is currently counting, so we don't start another timer.
+    bool activeSoundTimer;
     void DelayTimer();
     void SoundTimer();
     void StartDelayTimer();

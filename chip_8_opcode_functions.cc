@@ -260,7 +260,7 @@ void opcode_D_fn_sets(Chip_8 & chip8){
         }
     }
     chip8.drawFlag = true;
-    chip8.updateDisplay();
+    //chip8.updateDisplay();
     chip8.PC_increment();
 }
 
@@ -308,33 +308,32 @@ void opcode_F_fn_sets(Chip_8 & chip8){
         // Wait for a key press, store the value of the key in Vx.
         case 0x0A:
             {
-                while(true)
-                {
-                    for(size_t i = 0; i < 16; i++)
-                        if(chip8.key_status[i] == CHIP_8_KEY_PRESSED)
-                            {
-                                chip8.V[x] = i;
-                                break;
-                            }
-                            
-                }
+                bool keyIsPressed = false;
+
+                for(size_t i = 0; i < 16; i++)
+                    if(chip8.key_status[i] == CHIP_8_KEY_PRESSED)
+                        {
+                            chip8.V[x] = i;
+                            keyIsPressed = true;
+                        }
+                if(!keyIsPressed) 
+                    return; // Return To Skip This Cycle And repeat Fx0A opcode to wait for a key press.
+
                 chip8.PC_increment();
             }
         break;
         
         // Set delay timer = Vx
         case 0x15:
-            printf("Set Delay Timer to %d\n",chip8.V[x]);
             chip8.DT = chip8.V[x];
-            //chip8.StartDelayTimer();
+            chip8.StartDelayTimer();
             chip8.PC_increment();
         break;
         
         // Set sound timer = Vx.
         case 0x18:
-            printf("Set Sound Timer to %d\n",chip8.V[x]);
             chip8.ST = chip8.V[x];
-            //chip8.StartSoundTimer();
+            chip8.StartSoundTimer();
             chip8.PC_increment();            
         break;
         
